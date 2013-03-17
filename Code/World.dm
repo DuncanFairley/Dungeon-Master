@@ -6,18 +6,16 @@ as published by the Free Software Foundation; either version
 2 of the License, or (at your option) any later version.
 Full terms in included LICENSE file.
 */
+
+#define VERSION "1.0.1"
 world
 	name = "Dungeon Master"
 	view = 9
 	hub = "Ginseng.DungeonMaster"
-	version = 0.395
 	loop_checks  = 0
 
-	//MOOCOW
-	status = "Unknown's Mod - Version 0.1"
-
-
 	New()
+		status = "Version [VERSION]"
 		log = file("ErrorLog.txt")
 		LoadBans()
 		Name()
