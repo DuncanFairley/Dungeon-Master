@@ -1,0 +1,7 @@
+*.dmb
+*.rsc
+*.dyn.rsc
+*.int
+*.lk
+ErrorLog.txt
+players/
