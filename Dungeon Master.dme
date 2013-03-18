@@ -7,6 +7,11 @@
 // BEGIN_FILE_DIR
 #define FILE_DIR .
 // END_FILE_DIR
+#define FILE_DIR "Icons"
+#define FILE_DIR "Code"
+#define FILE_DIR "Icons"
+#define FILE_DIR "Sounds"
+
 
 // BEGIN_PREFERENCES
 // END_PREFERENCES
