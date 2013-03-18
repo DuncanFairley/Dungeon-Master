@@ -7,7 +7,7 @@ as published by the Free Software Foundation; either version
 Full terms in included LICENSE file.
 */
 
-#define VERSION "1.0.1"
+#define VERSION "1.0.3"
 world
 	name = "Dungeon Master"
 	view = 9
