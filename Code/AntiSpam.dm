@@ -1,11 +1,4 @@
-/*
-Dungeon Master Copyright © 2013 Aaron Davey and contributors.
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version
-2 of the License, or (at your option) any later version.
-Full terms in included LICENSE file.
-*/
+
 
 
 proc/SGS_Filter_txt(txt)
@@ -17,7 +10,7 @@ proc/SGS_Filter_txt(txt)
 	var/txtLen
 	var/Words[]
 	Words = new /list/
-	Words = list("\n","fuck","shit","bitch","whore","fag","dick","gay","lesbian","faggot","fag","pussy","cunt","cock","nigger","asshole","<br>")
+	Words = list("\n","Yog Sothoth","<br>")
 	if(Words.len)
 		memo:
 			for(mem = 1,mem < Words.len + 1,mem++)
@@ -61,7 +54,7 @@ proc/SGS_log_spam(txt)
     SGS_Spam_log_file.Add(txt2)
 proc/Safe_Guard(txt)
 	return SGS_Filter_txt(SGS_AntiSpam(txt))
-var/SGS_Brake_txt = 300
+var/SGS_Brake_txt = 750
 var/SGS_spam_num = 3
 var/SGS_allow_beep = 0
 var/SGS_Safe_Log_txt = 1
