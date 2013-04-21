@@ -1,0 +1,2 @@
+mob
+	IsWood = 1
