@@ -6,6 +6,10 @@
 
 macro
 	space return "Zip"
+	tab return "Toggle-Autodigging-add/sub"
+	f5 return "Use-Autodigging"
+	f6 return "MindFlayer"
+	f7 return "Send-File"
 	z return "Goto"
 	a return "All"
 	b return "Test"
@@ -20,7 +24,7 @@ macro
 	w return "SendMSG"
 	l return "WorldChat"
 	h return "Who"
-	n return "CertainUnit"
+	n return "Rename"
 	t return "Update"
 	q return "WayPoint"
 	x return "Emote"
@@ -32,6 +36,6 @@ macro
 	o return "MusicOff"
 	y return "GMChat"
 	f return "Ignore"
-	/ return "VoteKick"
-
-
+	- return "ClanChat"
+	= return "PlaceTapestry"
+	/ return "Developer-Logs"
