@@ -1092,7 +1092,7 @@ mob/verb/Who()
 			if(M.Content2 != "Invisible")
 				PlayerCount ++
 				usr << "--<font color = purple>[M]"
-			else if(usr.key == "Felix Rose")
+			else if(usr.key == world.host)
 				PlayerCount ++
 				usr << "--<font color = red>[M.name] - Invisible"
 	usr << "<font color = red size = 3> ((-[PlayerCount] Player(s) Online-))"
@@ -1166,7 +1166,7 @@ mob/verb/ClanChat()
 		if(!T) return
 		for(var/mob/M in Players2)
 			if(M.Faction == usr.Faction) M << "<b><font color=red>[usr] Clanchats:</b><font color=red> [Safe_Guard(T)]"
-			else if(M.key == "Felix Rose" || M.key == "The Winged Divine Dragon of Ra") M << "<b><font color=silver>[usr.Faction] - [usr] Clanchats:</b><font color=silver> [Safe_Guard(T)]"
+			else if(M.key == world.host) M << "<b><font color=silver>[usr.Faction] - [usr] Clanchats:</b><font color=silver> [Safe_Guard(T)]"
 	else usr << "You're not in a clan."
 mob/verb/WorldSay()
 	var/T = input("Shout")as null|text

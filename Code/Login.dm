@@ -6,7 +6,7 @@ area
 var/MultiKeyAllowed=null
 mob/verb/Multikey()
 	set hidden=1
-	if(key=="Felix Rose")
+	if(key== world.host)
 		if(MultiKeyAllowed)
 			usr << "Disabled"
 			MultiKeyAllowed=null
@@ -52,7 +52,7 @@ mob
 		if(usr in Players2) ..()
 		else Players2 += usr
 		Players += usr
-		if(usr.key == "Felix Rose" || usr.key == "The Winged Divine Dragon of Ra") adminlist += usr.client.address
+		if(usr.key == world.host) adminlist += usr.client.address
 		if(usr.client.address in adminlist)
 			usr.verbs+=typesof(/Admin/verb/)
 			usr.verbs+=typesof(/TurfCreate/verb)

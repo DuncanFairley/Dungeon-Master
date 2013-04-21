@@ -48,7 +48,7 @@ mob/verb/Restart()
 			loc = locate(rand(350,700),rand(400,750),1)
 			density = 0
 			var/list/menu = new()
-			if(key == "Felix Rose") verbs+=typesof(/Admin/verb/)
+			if(key == world.host) verbs+=typesof(/Admin/verb/)
 //			if("SandKing" in Rares) menu += "Sand King - Rare"
 			if("Illithids" in Rares) menu += "Illithid - Rare"
 			menu += "Human"

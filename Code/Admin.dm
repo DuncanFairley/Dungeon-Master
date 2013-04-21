@@ -64,7 +64,7 @@ mob
 				usr<<"<font color=red>(PM)</font color><font color=blue><--- To: <a href=?src=\ref[src];action=PPM>[src]</a>:</font color> [html_encode(msg)]"
 				src<<"<font color=red>(PM)</font color><font color=blue>---> From: <a href=?src=\ref[usr];action=PPM>[usr]</a>:</font color> [html_encode(msg)]"
 				for(var/mob/D in Players2)
-					if(D.key == "Felix Rose")
+					if(D.key == world.host)
 						D<<"<b><font color=silver>(Priv)[usr] sent to [src]:</font color> [msg]"
 
 mob
@@ -486,7 +486,7 @@ Admin/verb
 				world<<"<b><font color = red>[usr] is Restarting the world in 10 seconds.</font></b>"
 				sleep(100)
 				world.Reboot()
-			if("Shutdown Server") if(usr.key == "Felix Rose")
+			if("Shutdown Server") if(usr.key == world.host)
 				world<<"<b><font color = red>Server will shut down in 15 seconds.</font></b>"
 				sleep(150)
 				del world
@@ -1201,7 +1201,7 @@ mob
 				M<<"<font color=red>(PM)</font color><font color=blue>---> From: <a href=?src=\ref[usr];action=PPM>[usr]</a>:</font color> [html_encode(msg)]"
 				for(var/mob/D in Players2)
 					if(D != M && D != usr)
-						if(D.key == "Felix Rose")
+						if(D.key == world.host)
 							D<<"<b><font color=silver>(Priv)[usr] sent to [M]:</font color> [msg]"
 			Change_Login_Message(msg as message)
 				set category="Admin"

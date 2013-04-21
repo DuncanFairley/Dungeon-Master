@@ -1,10 +1,11 @@
 world
-	name = "Felix Hosting"
+	name = "NAMEOFWORLDHERE"
 	view = 9
 	hub = "Ginseng.DungeonMaster"
 	version = 0.395
 	loop_checks  = 0
-	status = "Felix Hosting"
+	status = "YOUR STATUS HERE"
+
 	New()
 		log = file("ErrorLog.txt")
 		Name()
