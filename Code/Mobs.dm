@@ -1706,6 +1706,7 @@ mob
 				Lord
 					IsRoyal=1
 					name = "{NPC} Demon Lord"
+					EXPNeeded=300000
 					Level=100
 					Strength = 30
 					Agility = 30
