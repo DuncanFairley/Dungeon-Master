@@ -1,0 +1,18 @@
+<?wpl version="1.0"?>
+<smil>
+    <head>
+        <meta name="Generator" content="Microsoft Windows Media Player -- 11.0.6001.7008"/>
+        <meta name="AverageRating" content="0"/>
+        <meta name="TotalDuration" content="0"/>
+        <meta name="ItemCount" content="0"/>
+        <title>DM soundtrack</title>
+    </head>
+    <body>
+        <seq>
+            <media src="..\..\Downloads\Warcraft 2\Human1gm.mid"/>
+            <media src="..\..\Downloads\Warcraft 2\Human2gm.mid"/>
+            <media src="..\..\Downloads\Warcraft 2\Human4gm.mid"/>
+            <media src="..\..\Downloads\Warcraft 2\Orc2gm.mid"/>
+        </seq>
+    </body>
+</smil>

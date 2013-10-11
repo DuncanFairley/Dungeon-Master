@@ -1,30 +1,3 @@
-/*
-Dungeon Master Copyright © 2013 Aaron Davey and contributors.
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version
-2 of the License, or (at your option) any later version.
-Full terms in included LICENSE file.
-*/
-obj/proc/DeleteItem()
-	if(src.suffix)
-		src.Content3 = 0
-		return
-	if(src.Content3 <= 3)
-		src.Content3 += 1
-	if(src.Content3 >= 3)
-		del(src)
-		return
-	spawn(1000) DeleteItem()
-
-
-
-obj/proc/CursedItem()
-	spawn(6000)
-	if(src.suffix == null)
-		del(src)
-	else
-		spawn(1) CursedItem()
 mob/proc
 	textlist(var/textlist)
 		writing=list();for(var/t=1,t<=length(textlist),t++)writing+=copytext(textlist,t,t+1)
@@ -39,109 +12,164 @@ mob/proc
 				offx+=8
 				if(offx >= 32) {/*sleep(0.1);*/offx-=32 ; x++}
 var/writing
-mob/proc/FrogResetTarget()
-	src.Stunned = 0
-	src.Fainted = 0
-	if(src.CanBeSlaved == 1)
-		src.destination = null
+mob/proc/PillarPowerup() if(ismob(Owner))
+	var/mob/M = Owner
+	for(var/obj/PowerupPillar/P in world) if(M.Faction == P.Content2)
+		Strength += P.Strength
+		GainEXP(P.Content3)
+		Agility += P.Agility
+		Defence += P.Defence
+		Intelligence += P.Intelligence
+		weightmax += P.weightmax
+mob/proc/Meditation() spawn()
+	if(Meditating)
+		Meditating = 0
+		Owner << "[src] prepares to stop meditating."
 	else
-		return
-	spawn(500) FrogResetTarget()
-
-mob/proc/ResetTarget()
-	if(src.CanBeSlaved)
-		src.destination = null
-	else
-		return
-	spawn(500) ResetTarget()
-mob/proc/Running()
+		Meditating = 1
+		view(src) << "[src] starts to meditate. They will slowly gain magical skills over time."
+		if(StopDouble("Meditation"))
+			while(Meditating)
+				if(ismob(Owner)) if(!Owner:client) break
+				Target = null
+				BowOn = 0
+				CanWalk = 0
+				destination = null
+				sleep(100)
+				if(MagicalWill < 50) if(prob(35))
+					MagicalWill += 0.5
+					if(Race == "Svartalfar") MagicalWill += 0.5
+				if(MagicalAnger < 50) if(prob(35))
+					MagicalAnger += 0.5
+					if(Race == "Svartalfar") MagicalAnger += 0.5
+				if(MagicalMind < 50) if(prob(30))
+					MagicalMind += 0.5
+					if(Race == "Svartalfar") MagicalMind += 0.5
+				if(MagicalConcentration < 50) if(prob(30))
+					MagicalConcentration += 0.5
+					if(Race == "Svartalfar") MagicalConcentration += 0.5
+				if(MaxMana < 250) if(prob(40))
+					MaxMana += 1.25
+					if(Race == "Svartalfar") MaxMana += 1.25
+				if(Mana<MaxMana) Mana+=0.5
+				GainEXP(25)
+			Meditating=0
+			view(src) << "[src] finishes meditating and stands up."
+			RunningProcs-="Meditation"
+			CanWalk = 1
+mob/proc/CacoonTrap()
+	for(var/mob/Monsters/X in range(4,src))
+		var/OGB = 0
+		if(X.Owner != src.Owner)
+			if(!X.Critter)
+				for(var/mob/KLL in Players2)
+					if(KLL == src.Owner)
+						for(var/mob/MK in Players2)
+							if(X.Owner == MK)
+								if(MK.name in KLL.AllyList || MK.Faction == KLL.Faction)
+									OGB = 1
+		if(OGB == 0)
+			var/mob/Monsters/Devourer/FleshCrawler/F1 = new(loc)
+			var/mob/Monsters/Devourer/FleshCrawler/F2 = new(loc)
+			F1.Owner = src.Owner
+			F2.Owner = src.Owner
+			F1.destination = X
+			F2.destination = X
+			F1.name = "{[F1.Owner]} Flesh Crawler"
+			F2.name = "{[F2.Owner]} Flesh Crawler"
+			view(src) << "[src] explodes open in a shower of gore and releases two small monstrosities!"
+			src.Owner << "<b><font color=red><font size=3>[src] has detected an intruder at [src.x],[src.y],[src.z]!"
+			del src
+	spawn(5) src.CacoonTrap()
+mob/proc/SolarPowered()
+	if(night == 0)
+		src.Hunger += 1
+		if(src.Hunger >= 100)
+			src.Hunger = 100
+		src.Mana += 1
+		if(src.Mana >= src.MaxMana)
+			src.Mana = src.MaxMana
+		src.Tiredness += 0.5
+		if(src.Tiredness >= 100)
+			src.Tiredness = 100
+	spawn(100)
+		src.SolarPowered()
+mob/proc/Running() if(!Running && Delay > 1)
+	view(src) << "[src] starts to run!"
+	Running = 1
+	Delay -= 1
+	Tiredness -= 25
 	spawn(300)
-		src.Delay += 1
-		view() << "[src] stops running!"
+		Delay += 1
+		view(src) << "[src] stops running!"
 		spawn(100)
-		src.Running = 0
-mob/proc/RanWalk()
-	if(src.InHole == 0)
-		if(src.CanWalk)
-			if(src.destination == null)
-				step_rand(src)
-				for(var/mob/Monsters/M in view(4,src))
-					if(M.Owner == src.Owner)
-						..()
-					else
-						if(M.CantKill == 0)
-							src.destination = M
-			if(destination)
-				step_towards(src,src.destination)
-
-
-	spawn(5) RanWalk()
-
-
-
-
-mob/proc/RandomWalk()
-	if(src.CanBeSlaved)
-		if(src.InHole == 0)
-			if(src.CanWalk)
-				if(src.destination)
-					step_towards(src,src.destination)
-				if(src.destination == null)
-					step_rand(src)
-					for(var/mob/Monsters/M in view(4,src))
-						if(M.Owner == src.Owner)
-							..()
-						else
-							if(M.CantKill == 0)
-								src.destination = M
-
-	else
-		src.WalkTo()
-		return
-	spawn(6) RandomWalk()
+		Running = 0
 obj/proc/Portal()
 	for(var/mob/M in view(0,src))
 		if(M.loc != locate(M.x,M.y,4))
 			M.loc = locate(M.x,M.y-1,4)
+			M.destination = null
 			var/C = prob(15)
 			var/P = prob(25)
-			if(M.client == null)
-				if(C)
-					if(M.CanSee)
-						if(M.Wagon == 0)
-							M.Owner << "[M] goes insane from the horror and tears their own eyes out!"
-							M.HasLeftEye = 0
-							M.HasRightEye = 0
-							M.CanSee = 0
-							M.RightEyeHP = 0
-							M.LeftEyeHP = 0
-							M.LeftEye = "Destroyed"
-							M.RightEye = "Destroyed"
+			if(M.client == null) if(!M.SubRace)
+				if(C) if(M.CanSee)
+					if(M.Wagon == 0 && M.Race != "Demon" && M.Race != "Gargoyle" && M.Race != "Demon" && M.Race != "Dragon" && M.Unholy == 0)
+						M.Owner << "[M] goes insane from the horror and tears their own eyes out!"
+						M.HasLeftEye = 0
+						M.HasRightEye = 0
+						M.CanSee = 0
+						M.RightEyeHP = 0
+						M.LeftEyeHP = 0
+						M.LeftEye = "Destroyed"
+						M.RightEye = "Destroyed"
 				if(C == 0)
 					if(P)
 						if(ismob(M.Owner))
-							var/mob/O = M.Owner
-							if(O.EntPortal <= 5)
-								if(M.Wagon == 0)
-									if(M.Spider == 0)
-										if(M.Vampire == 0)
-											M.Owner << "[M] is possessed by the demonic forces surrounding the portal!"
-											O.EntPortal += 1
-											M.TurnDemon()
+							if(M.Wagon == 0)
+								if(M.Race != "Demon" && M.Race != "Gargoyle" && M.Race != "Demon" && M.Race != "Dragon")
+									M.Owner << "[M] is possessed by the demonic forces surrounding the portal!"
+									M.RaceChange(SUBRACE="HalfDemon")
 		else
 			M.loc = locate(M.x,M.y-1,src.Content)
-	spawn(10) Portal()
-obj/proc/Spawn()
-	if(src.Content >= 0)
-		var/mob/Monsters/DemonNPC/D = new
-		D.loc = src.loc
-		src.Content -= 1
-
-
-	else
-		src.Portal()
+			M.destination = null
+	spawn(10)
+		Portal()
 		return
-	spawn(200) Spawn()
+obj/proc/PlantRegen()
+	if(src.Content <= 4)
+		src.Content += 1
+		if(src.Content >= 1)
+			if(src.Content3 == "Grape")
+				src.icon_state = "PPlant5"
+			if(src.Content3 == "Tomato")
+				src.icon_state = "Plant5"
+		if(src.Content >= 2)
+			if(src.Content3 == "Grape")
+				src.icon_state = "PPlant4"
+			if(src.Content3 == "Tomato")
+				src.icon_state = "Plant4"
+		if(src.Content >= 3)
+			if(src.Content3 == "Grape")
+				src.icon_state = "PPlant3"
+			if(src.Content3 == "Tomato")
+				src.icon_state = "Plant3"
+		if(src.Content >= 4)
+			if(src.Content3 == "Grape")
+				src.icon_state = "PPlant2"
+			if(src.Content3 == "Tomato")
+				src.icon_state = "Plant2"
+		if(src.Content >= 5)
+			if(src.Content3 == "Grape")
+				src.icon_state = "PPlant1"
+			if(src.Content3 == "Tomato")
+				src.icon_state = "Plant1"
+	spawn(1200)
+		src.PlantRegen()
+		return
+obj/proc/AstralPortal()
+	for(var/mob/M in view(0,src))
+		var/obj/AstralPortal/A
+		M.loc = A.GoesTo
 mob/proc/FindItems()
 	for(var/obj/Items/I in view(6,src))
 		if(I.suffix == null)
@@ -168,11 +196,8 @@ mob/proc/TurnOffAttack()
 	spawn(500) TurnOffAttack()
 
 mob/proc/PetFollow()
-	if(destination)
-		step_towards(src,src.destination)
-
-	else
-		return
+	if(destination) step_towards(src,src.destination)
+	else return
 	spawn(5) PetFollow()
 
 
@@ -183,113 +208,6 @@ mob/proc/Ready()
 	src.MaxWebContent += 100
 	src.WebContent = src.MaxWebContent
 	src.CanBreed = 1
-
-mob/proc/CheckSpiderHunterAge()
-	if(src.CanGrowShell == 1)
-		if(src.Defence <= 50)
-			src.Defence += 1
-			src.Owner << "<b><font color=purple>[src]'s chitinous armour grows stronger"
-	if(src.CanGrowShell == 0)
-		if(src.Age >= 2)
-			src.CanGrowShell = 1
-			src.Owner << "<b><font color=purple>[src] has grown a layer of chitinous armour!"
-	if(src.MakesPosion == 1)
-		src.PosionDMG += 0.3
-	if(src.MakesPosion == 0)
-		if(src.Age >= 2)
-			src.MakesPosion = 1
-			src.HasGland = 1
-			src.Owner << "<b><font color=purple>[src] s a posion gland!"
-			src.Owner << "<b><font color=purple>[src] grows a silk gland!"
-			src.Owner << "<b><font color=purple>[src] has grown!"
-			src.PosionDMG = 7
-			src.CanBuildSilk = 1
-			src.MaxWebContent += 100
-			src.WebContent = 100
-			src.icon = 'SpiderHunterOlder.dmi'
-			src.icon_state = "Normal"
-mob/proc/CheckSpiderWorkerAge()
-	if(src.MakesPosion == 1)
-		src.PosionDMG += 0.3
-	if(src.MakesPosion == 0)
-		if(src.Age >= 2)
-			src.MakesPosion = 1
-			src.HasGland = 1
-			src.Owner << "<b><font color=purple>[src] grows a posion gland!"
-			src.Owner << "<b><font color=purple>[src] grows a silk gland!"
-			src.Owner << "<b><font color=purple>[src] has grown!"
-			src.PosionDMG = 3
-			src.CanBuildSilk = 1
-			src.MaxWebContent += 100
-			src.WebContent = 100
-			src.IsYoungWorker = 0
-			src.icon = 'SpiderWorkerOlder.dmi'
-			src.icon_state = "Normal"
-mob/proc/CheckSpiderWarriorAge()
-	if(src.CanGrowShell == 1)
-		if(src.Defence <= 50)
-			src.Defence += 1
-			src.Owner << "<b><font color=purple>[src]'s chitinous armour grows stronger"
-	if(src.CanGrowShell == 0)
-		if(src.Age >= 2)
-			src.CanGrowShell = 1
-			src.Owner << "<b><font color=purple>[src] has grown a layer of chitinous armour!"
-	if(src.MakesPosion == 1)
-		src.PosionDMG += 0.5
-	if(src.MakesPosion == 0)
-		if(src.Age >= 2)
-			src.MakesPosion = 1
-			src.HasGland = 1
-			src.Owner << "<b><font color=purple>[src] grows a posion gland!"
-			src.Owner << "<b><font color=purple>[src] has grown!"
-			src.PosionDMG = 8
-			src.IsYoungWarrior = 0
-			src.icon = 'SpiderWarriorOlder.dmi'
-			src.icon_state = "Normal"
-
-
-
-mob/proc/CheckSpiderAge()
-	if(src.CanGrowShell == 0)
-		if(src.Age >= 23)
-			src.CanGrowShell = 1
-			src.Owner << "<b><font color=purple>[src] has grown a layer of chitinous armour!"
-	if(src.CanGrowShell == 1)
-		if(src.Defence <= 50)
-			src.Defence += 2
-			src.Owner << "<b><font color=purple>[src]'s chitinous armour grows stronger"
-	if(src.CanBuildSilk == 1)
-		src.MaxWebContent += 15
-		src.Owner << "<b><font color=purple>[src]'s glands produce more silk."
-	if(src.MakesPosion == 1)
-		src.PosionDMG += 1
-		src.Owner << "<b><font color=purple>[src]'s glands produce deadlier posion."
-	if(src.IsYoungQueen == 1)
-		if(src.CanBuildSilk == 0)
-			if(src.Age >= 22)
-				src.CanBuildSilk = 1
-				src.Owner << "<b><font color=purple>[src] grows a silk gland!"
-				src.WebContent = 150
-				src.MaxWebContent = 150
-		if(src.MakesPosion == 0)
-			if(src.Age >= 23)
-				src.MakesPosion = 1
-				src.Owner << "<b><font color=purple>[src] grows a posion gland!"
-				src.PosionDMG = 15
-				src.HasGland = 1
-	if(src.IsYoungQueen == 1)
-		if(src.Age >= 24)
-			src.IsYoungQueen = 0
-			src.IsOlderQueen = 1
-			src.Owner << "<b><font color=purple>[src] grows an egg sack!"
-			src.icon = 'SpiderQueenOlder.dmi'
-			src.icon_state = "Normal"
-			src.CanLayEggs = 1
-	if(src.IsOlderQueen == 1)
-		if(src.Age >= 29)
-			src.IsOlderQueen = 0
-			src.IsMatureQueen = 1
-			src.Owner << "<b><font color=purple>[src]'s organs have matured enough so that she may breed."
 
 
 
@@ -419,13 +337,15 @@ mob/proc/Save()
 	var/sav = "players/[src.ckey]_save.sav"
 	var/savefile/S = new(sav)
 	S["Kills"] << src.Kills
-	S["Points"] << src.Points
+	S["Faction"] << src.Faction
+	S["IsClanLeader"] << src.IsClanLeader
 mob/proc/Load()
 	var/sav = "players/[src.ckey]_save.sav"
 	if(length(file(sav)))
 		var/savefile/S = new(sav)
 		S["Kills"] >> src.Kills
-		S["Points"] >> src.Points
+		S["Faction"] >> src.Faction
+		S["IsClanLeader"] >> src.IsClanLeader
 mob/proc/Dig()
 	if(Dig)
 		if(src.Sleeping == 0)
@@ -436,481 +356,312 @@ mob/proc/Dig()
 							src.destination = T
 					if(src.DigTarget == null)
 						src.DigTarget = D
-
-
-
-
 	else
 		return
 	spawn(1) Dig()
 mob/proc/Heat()
-	if(src)
-		for(var/mob/Monsters/M in view(4,src))
-			if(M)
-				if(M.Coldness >= 0)
-					M.Coldness = 0
+	for(var/mob/Monsters/M in view(4,src)) if(M.Coldness >= 0) M.Coldness = 0
+	for(var/turf/grounds/KKG in view(1,src))
+		if(KKG.OnFire == 0)
+			if(KKG.IsWood == 1)
+				var/CatchChance = prob(10)
+				if(CatchChance)
+					if(KKG.icon_state == "WoodWall")
+						KKG.Fire()
+					if(KKG.icon_state == "TribalWall")
+						KKG.Fire()
+					if(KKG in view(0,src))
+						if(KKG.icon_state == "WoodFloor")
+							KKG.Fire()
+						if(KKG.icon_state == "Tribal")
+							KKG.Fire()
 	spawn(75) Heat()
 mob
 	var
+		tmp
+			SavedDest = null
+			InfectedBy = null
+			MagicTarget = null
+			TemporaryUnitTarget = null
+			BrainWasher = null
+			Meditating = 0
+			PracticeSkill = 0
+			DigTarget = null
+			CanUseLeftArm = 1
+			CanUseRightArm = 1
+			CanWalk = 1
+			WalkNumber = 0
+			HealNumber = 0
+			LoggedIn = 0
+			Killer = null
+			Sleeping = 0
+			Running = 0
+		EmoteLog = null
+		ChatLog = null
 		Kills = 0
-		Points = 0
-		UnitList = null
-		EntPortal = 0
+		Faction = "Player"
+		Loaded = 0
+		DMID = null
+		IsClanLeader = 0
 
-		PatrolPoint1
-
-		PatrolPoint2
-
-		CanSpeak = 1
-
-
-
+		CantBeGiven
 		Waypoint = null
 		Waypoint2 = null
 		Waypoint3 = null
-
-		IgnoreList
-
-		HasLeftEye
-
-		IsSkorn = 0
-
-
-		StoleFromSkorn = 0
-
-		IsBleeding = 0
-
 		SaidBleed = 0
-
-		CanUseLeftArm = 1
-
-		CanUseRightArm = 1
-
-		CanWalk = 1
-
-		AITree = 0
-
-		Killer = null
-
 		DeathType = null
-
 		BloodContent = 0
-
 		MaxBloodContent = 0
-
+		HasLeftEye
 		HasRightEye
-
 		HasRightLung
-
-		Function = null
-
 		HasLeftLung
-
 		HitWings
-
 		Wings
-
-		WingHP = 100
-
+		WingsHP
 		Morphed = 0
-
 		HasSpleen
-
 		WingsOut = 0
-
-		CanLayEggs = 0
-
 		HasTeeth
-
 		HasLeftArm
-
-		TreeTarget = null
-
-
 		HasRightArm
-
-		CanGrowShell = 0
-
 		HasLeftLeg
-
 		HasRightLeg
-
 		CanBreed = 0
-
 		HasHead
-
 		HasLeftEar
-
 		HasRightEar
-
 		HasGuts
-
 		HasStomach
-
 		HasLeftKidney
-
 		HasRightKidney
-
 		HasLiver
-
-		LoggedIn = 0
-
 		HasBrain
-
 		HasHeart
-
 		SkillDMG
-
-
 		HasThroat
-
 		HasNose
-
 		BleedType
-
-
-
 		Stunned = 0
-
-
-
-		Fainted
-
-
-
+		Fainted = 0
 		LeftEye
 
 		RightEye
 
 		RightLung
 
-		HasGland = 0
 
 		LeftLung
-
-		Alive = 1
-
 		Spleen
-
 		Teeth
-
 		LeftArm
-
 		RightArm
-
 		LeftLeg
-
 		RightLeg
-
 		Head
-
 		LeftEar
-
 		RightEar
-
 		Guts
-
 		Stomach
-
 		LeftKidney
-
 		RightKidney
-
 		CanSee = 1
-
 		Liver
-
 		Brain
-
 		Heart
-
 		Throat
-
 		Nose
-
 		HitHead
-
 		HitLeftArm
-
 		HitRightArm
-
 		HitLeftLeg
-
 		HitRightLeg
-
 		HitLowerBody
-
 		HitUpperBody
-
 		BowOn = 0
-
 		HitLeftEar
-
 		HitRightEar
-		EXP = 0
-
 		HitGuts
-
 		HitStomach
-
 		HitLeftKidney
-
 		HitRightKidney
-
 		HitLiver
-
 		HitBrain
-
 		HitHeart
-
 		HitThroat
-
 		HitNose
-
 		HitLeftEye
-
 		HitRightEye
-
 		HitRightLung
-
 		HitLeftLung
-
 		HitSpleen
-
 		HitTeeth
-
 		HitSkull
 
 		LeftEyeHP = 100
-
 		RightEyeHP = 100
-
 		RightLungHP = 100
-
 		LeftLungHP = 100
-
 		SpleenHP = 100
-
 		TeethHP = 100
-
 		LeftArmHP = 100
-
 		RightArmHP = 100
-
 		LeftLegHP = 100
-
 		RightLegHP = 100
-
 		HeadHP = 100
-
 		LeftEarHP = 100
-
 		RightEarHP = 100
 
-		SellsPotion = 0
-
 		GutsHP = 100
-
 		StomachHP = 100
-
 		LeftKidneyHP = 100
-
 		RightKidneyHP = 100
-
 		LiverHP = 100
-
 		BrainHP = 100
-
 		HeartHP = 100
-
 		ThroatHP = 100
-
 		NoseHP = 100
-
-		DamageType
-
-		LeftArmMaxHP = 100
-
-		RightArmMaxHP = 100
-
-		LeftLegMaxHP = 100
-
-		RightLegMaxHP = 100
-
+		OrganMaxHP = 100
 		TeethHPMax = 100
 
+		DamageType
+		CraftCount = 0
 		Age = 0
+		Flying = 0
 		Muted = 0
-		IsYoungWarrior = 0
-		IsWarrior = 0
-		IsHunter = 0
-		StealTarget
-		MakesPosion = 0
-		IsYoungQueen = 0
-		IsOlderQueen = 0
-		IsMatureQueen = 0
-		Crippled = 0
-		MakesBoneCraft = 0
-		Sleeping = 0
-		OldIcon = null
-		OldState = null
+		SavedIcon
+		SavedDefence
+		SandWorker = 0
 		ShieldSkill = 0
+		Mana = 0
+		MaxMana = 0
+		NetherManCount = 0
 		Egg = 0
-		HammerSkill = 0
-
-		WearingBack = 0
+		Mutated = 0
 		AxeSkill = 0
+		CliffClimber = 0
+		DaggerSkill = 0
 		Delay = 4
 		ButcherySkill = 0
-		HoldingWeapon = 0
+		Shielded = 0
 		LeatherCraftingSkill = 0
-		Using = null
 		StoneCraftingSkill = 0
-		CanKill = 0
-		Posionus = 0
-		Posion = 0
-		UsesPosion = 0
-		CanBuild = 1
-		WearingLeftArm = 0
-		WearingRightArm = 0
-		WearingFullPlateHelm = 0
-		CanBuildSilk = 0
+		CantLoseLimbs = 0
+		UsesPoison = 0
 		Fling = 0
+		Caged = 0
 		CanBeCaged = 0
-		CanFarm = 0
-		DigTarget = null
 		BuildingSkill = 0
 
 		WoodCraftingSkill = 0
+		MagicalAptitude = 0
+		MagicalWill = 0
+		MagicalMind = 0
+		MagicalAnger = 0
+		MagicalConcentration = 0
+		DodgeDelay = 0
+		ImmuneToMagic = 0
+		ImmuneToTemperature = 0
+		Berserking = 0
+		DefensiveFight = 0
+		ImmuneToVampire = 0
+		VampPick = 0
 		MetalCraftingSkill = 0
-		SkinningSkill = 0
+		NotInLight = 0
+		SkinningSkill = 1
 		SpecialUnit = 0
-		SmeltingSkill = 0
+		NecromancySkill = 0
+		GargRuby = 0
+		GargEmerald = 0
+		HolySkill = 0
+		DestructionSkill = 0
+		AstralSkill = 0
+		ChaosSkill = 0
 		SpearSkill = 0
-		SunSafe = 0
-		speeding = 0
-		Running = 0
 		OldOwner = null
-		SettingAIWood = 0
-		ReturnOwner = null
-		IsYoungHunter = 0
-		OnGuard = 0
-		WebContent = 0
-		MaxWebContent = 0
-		Queen = 0
+		SaveToggle1 = 0
 		FishingSkill = 0
 		HasWings = 0
-		Level = 0
-		IsWorker = 0
 		DayWalker = 0
-		InfectedBy = null
 		Infects = 0
-		IsTrader = 0
-		ImmunePosion = 0
-		ListOn = 0
-		LoggedOut = 0
-		StoleFromDwarfs = 0
-		StoleFromKobolds = 0
-		StoleFromGoblins = 0
+		ImmunePoison = 0
 		Cantame = 0
-		Mum = null
-		Dad = null
-		TheDad = null
 		ReturningHome = 0
 		AttackModeOn = 1
-		ForgingSkill = 0
 		JewlCraftingSkill = 0
 		BoneCraftingSkill = 0
 		SneakingSkill = 0
-		KingLeader = null
-		QueenLeader = null
 		DieAge = 0
-		HasKing = 0
-		HasQueen  = 0
-		PosionHits = 0
-		FangsHit = 0
+		ImmuneToDevourer = 0
 		MaceSkill = 0
-		Strength
-		WearingLegs = 0
-		WillJoin = 0
-		TalkingTo
+		PreviousOwner = null
 		PotionSkill = 0
 		EXPNeeded = 100
 		LockPickingSkill = 0
-		Intelligent = 0
-		Humanoid
-		Freeze = 0
-		HasPick = 0
+		Unholy = 0
+		EggContent = 0
+
+		ColdBreath = 15
+		FirePoints = 0
+		IcePoints = 0
+		SandPoints = 0
+		PoisonPoints = 0
+		MagmaPoints = 0
+		ZombiePoints = 0
+		WaterPoints = 0
+
 		UsesPicks = 0
 		Hunger = 100
-		WearingHelmet = 0
 		MaxHunger = 100
 		UnArmedSkill = 0
-		RunAwayFrom = null
-		HomeLoc = null
 		Tiredness = 100
-		FutureOwner = null
-		BoneCraft = 0
-		BreedLimit = 0
-		WearingShield = 0
-		Leave = 0
 		CookingSkill = 0
-		LaysAdvancedEggs = 0
-		Preg = 0
-		Rares = null
-		Address = null
 		MineingSkill = 0
 		WoodCuttingSkill = 0
-
-
-
+		Gender = "None"
+var/LoginMessage="Welcome to Dungeon Master!"
 atom
 	var
-		Deer = 0
-		Dead = 0
-		Dwarf = 0
-		CanEat
-		User = 0
+		tmp
+			Target
+			Owner
+			Star
+			Restart = 0
+			CoolDown = 0
+			M //Only used for saves
+		AM //Only used on pillars
+		NoDropOnDeath = 0
+		Intelligence = 0
+		IsBread = 0
+		IsCake = 0
 		ArmourSkill = 0
-		Defence
-		Agility
-		Human = 0
-		LizardMan = 0
-		Vampire = 0
+		LockVar = 0
 		Cant = 0
-		WearingChest = 0
-		Goblin = 0
-		Posioned = 0
+		Poisoned = 0
 		CraftRank = null
 		HumanParts = 0
+
 		BelongsToHumans = 0
-		StoleFromHumans = 0
-		Beatle = 0
-		Star
-		Gender = "None"
+		BelongsToDwarf = 0
+		BelongsToGoblin = 0
+		BelongsToSkorn = 0
+
 		CanFish = 0
 		Undead = 0
-		CoinContent = 0
-		Owner
 		Up = 0
 		CantKill = 0
 		Tame = 0
+		Cactus = 0
 		Tree = 0
 		Bamboo = 0
-		Icon = null
-		State = null
-		AMMode = 0
 		Coldness = 0
 		HasHeadOn = 0
 		Sky = 0
-		Chest = 0
-		BelongsToSkorn = 0
-		Mole = 0
 		GoingToDie = 0
+		BloodAcidity = 0
 
 
 		IsPotion = 0
-		Cactus = 0
 
 
 		WS = 0
@@ -918,98 +669,44 @@ atom
 		IsEmpty = 0
 
 		HasWater = null
-
-
-
-
-
-		Historys
-		Born
 		SwordSkill = 0
-		Done = 0
+		ClawSkill = 0
 		Dig = 0
 
 		Drill = 0
-		PermSnow = 0
 		IsWall = 0
-		Days = 0
-		BowSkill
+		BowSkill = 0
 		CaveWater = 0
 		T = 0
 
-		Race = null
-		IsBodyPart = 0
-		CF = 0
-		IsCave = 1
-
-		UsingSilver = 0
-		PosionDMG = 0
-		PosionContent = 0
-		IsHead = 0
+		PoisonDMG = 0
+		PoisonContent = 0
 
 		Old
-		Old2
-
-		Wait = 0
-
-
-		IsTree = 0
-		EncrustedRuby = 0
-
-		Spider = 0
-		EncrustedEmerald = 0
-		EncrustedDiamond = 0
-		Restart = 0
-		CoolDown = 0
-
 
 		GoesTo = null
-		Underground = 1
-		no = 0
-		FrogMan = 0
 		isbridge = 0
-		Wolf = 0
-		NPC = 0
-		BOwner = null
-		BelongsToDwarf = 0
-		IsYoungWorker = 0
-		BelongsToGoblin = 0
-		BelongsToKobold = 0
-
 
 		Content = 0
 		Content2 = 0
 		Content3 = 0
 
-		Fish = 0
-		Mason = 0
 		GM = 0
 		WC = 0
-
-		Kobold = 0
-
-		G = 0
-		BB = 0
-		B = 0
+		DE = 0
 
 		OnFire = 0
 		Fuel = 75
-		OIcon = null
+		OIcon = "Grass"
 		IsWood = 0
 		CanBeSlaved = 0
 		Door = 0
 
-		IsGem = 0
-		Escort = 0
 		CanDigAt = 0
-		CanDetail = 0
 		html
 		Placed = 0
 		Locked = 0
 		Supported = 0
-		Told = 0
-		IsGlass = 0
-		IsPW = 0
 
 		Detailed = 0
 		IsTrap = 0
@@ -1019,67 +716,84 @@ atom
 		IsSpiked = 0
 		HasPersonIn = 0
 
+		Enchanted = 0
+
 		Wagon = 0
 		Body = 0
-		IsSkin = 0
 
-		Kit = 0
-		said = 0
-		Gold = 0
 		Silver = 0
-		Gems = 0
 		Skinned = 0
 		TP = 0
 		Carn = 0
 		Pale = 0
-		Jailed = 0
-		PosionSkill = 0
-		Stop = 0
-		Target
-		WorkShop = 0
+		PoisonSkill = 0
 
 		CR = 0
-		M = 0
 
-		said2 = 0
-		Skill = 0
 		Black = 0
-		Carpentry = 0
-		Smelter =0
 		HasPlantIn = 0
-		Forge = 0
 
-		Bug = 0
-		AM = 0
-		E = 0
+		Evolved
 
 		IsMist = 0
 
 		TS = 0
+		HP
+		MAXHP
+		weight = 0
+		weightmax = 0
 obj/proc/TowerCapGrow()
 	sleep(1000)
-	var/mob/Monsters/TowerCap/C = new
+	var/mob/Monsters/Critters/TowerCap/C = new
 	C.loc = src.loc
 	del(src)
 	return
 obj/proc/GrapeGrow()
 	sleep(1000)
-	if(Winter == 0)
+	if(Season != "Winter")
 		var/obj/Items/Plants/GrapeVine/T = new
 		T.loc = src.loc
 		T.name = "Grape Vine Plant"
 		del(src)
-	if(Winter == 1)
-		del(src)
-	return
+	else del(src)
+obj/proc/AcidSpray()
+	if(src.BloodAcidity >= 1)
+		for(var/mob/Monsters/M in range(0,src))
+			if(M.BloodAcidity == 0)
+				view(M) << "[M] steps into a pool of acidic blood!"
+				M.BloodContent -= 10
+				M.BloodLoss()
+		for(var/turf/grounds/Y in view(1,src))
+			var/AcidMelt = prob(src.BloodAcidity)
+			if(AcidMelt == 1)
+				Y.name = "acid ground"
+				Y.icon = 'Cave.dmi'
+				Y.icon_state = "Acidground"
+				Y.Sky = 1
+				Y.Content3 = "CanClimb"
+				Y.OIcon = "Acidground"
+				Y.density = 0
+				Y.CanDigAt = 0
+				Y.opacity = 0
+		for(var/obj/Items/I in view(0,src))
+			var/Melt = prob(src.BloodAcidity)
+			if(Melt == 1)
+				var/obj/Bloods/AcidGoo/A = new(I.loc)
+				A.name = I.name
+				del I
+		if(src.Undead == 0)
+			src.icon += rgb(-50,150,0)
+			src.Undead = 1
+	spawn(20)
+		src.AcidSpray()
 obj/proc/TomatoGrow()
 	sleep(1000)
-	if(Winter == 0)
+	if(Season != "Winter")
 		var/obj/Items/Plants/TomatoPlant/T = new
 		T.loc = src.loc
 		T.name = "Tomato Plant"
 		del(src)
-	if(Winter == 1)
+	else
 		for(var/turf/T in view(0,src))
 			T.HasPlantIn = 0
 			del(src)
@@ -1093,60 +807,23 @@ obj/proc/Seek()
 	spawn(0.1) Seek()
 obj/proc/GarlicGrow()
 	sleep(1000)
-	if(Winter == 0)
+	if(Season != "Winter")
 		var/obj/Items/Plants/GarlicPlant/T = new
 		T.loc = src.loc
 		T.name = "Garlic Plant"
 		del(src)
-	if(Winter == 1)
+	else
 		for(var/turf/T in view(0,src))
 			T.HasPlantIn = 0
 			del(src)
 	return
-mob/proc/BowTarget()
-	if(src.BowOn == 0)
-		return
-	if(src.HoldingWeapon == "Bow")
-		if(src.HasRightArm == 1)
-			if(src.Sleeping == 0)
-				if(src.Target)
-					if(src.Target in oview(5,src))
-						for(var/obj/Items/Armours/Back/LeatherQuiver/L in src)
-							if(L.suffix == "(Equiped)")
-								for(var/obj/Items/Arrows/A in L)
-									view() << 'Arrow.ogg'
-									A.loc = src.loc
-									A.suffix = null
-									A.Owner = src.Owner
-									A.Target = src.Target
-									A.density = 1
-									A.BowSkill = src.BowSkill
-									A.Seek()
-									src.BowSkill += 0.3
-									src.EXP += 4
-									src.destination = null
-									L.Content -= 1
-									break
-							break
-
-					else
-						src.Target = null
-						src.BowOn = 0
-		else
-			src.BowOn = 0
-			return
-	else
-		src.BowOn = 0
-		return
-	if(src.BowOn)
-		spawn(50) BowTarget()
-obj/proc/PosionSporeGrow()
+obj/proc/PoisonSporeGrow()
 	sleep(750)
 	if(src)
 		for(var/turf/T in view(0,src))
 			if(T.Detailed == 0)
 				if(T.Content == "Marsh")
-					var/mob/Monsters/GrownPosionSporePlant/P = new
+					var/mob/Monsters/Critters/PoisonSporePlant/P = new
 					P.loc = src.loc
 	del(src)
 	return
@@ -1156,13 +833,13 @@ obj/proc/CarnGrow()
 		for(var/turf/T in view(0,src))
 			if(T.Detailed == 0)
 				if(T.Content == "Marsh")
-					var/mob/Monsters/GrownCarnivorousPlant/P = new
+					var/mob/Monsters/Critters/CarnivorousPlant/P = new
 					P.loc = src.loc
 	del(src)
 	return
 obj/proc/TreeGrow()
 	sleep(1000)
-	if(Winter == 0)
+	if(Season != "Winter")
 		for(var/turf/T in view(0,src))
 			if(T.icon_state == "Grass")
 				T.icon = 'plants.dmi'
@@ -1230,109 +907,26 @@ mob/proc/Struggle()
 			else
 				return
 	spawn(100) Struggle()
-mob/proc/SunLight()
-	if(src.Vampire == 1)
-		if(src.Underground == 0)
-			if(src.SunSafe == 0)
-				src.Owner << "<b><font color=red>[src] takes damage from the sun!"
-				src.HP -= 50
-				if(src.HP <= 0)
-					src.GoingToDie = 1
-					src.Killer = "The Sun"
-					src.DeathType = "Being Burned"
-					src.Death()
-					return
-			else
-				return
-		else
-			return
-	spawn(50) SunLight()
 mob/proc/CreateZombie()
 	spawn(500)
 		if(src)
+			src.icon = turn(src.icon,270)
 			var/mob/Monsters/Zombie/Z = new
 			Z.icon = src.icon
 			Z.icon_state = src.icon_state
-			if(src.Owner)
-				var/mob/O = src.Owner
-				Z.Owner = O
-				Z.name = "([O]) Zombie"
-				O.UnitList += Z
+			for(var/mob/O in world)
+				if(O.ckey == src.Owner)
+					Z.Owner = O
+					Z.name = "([O]) Zombie"
+					O.UnitList += Z
 			Z.Zombie()
 			Z.LimbLoss()
-			var/obj/Bloods/Zombie/O = new
-			Z.overlays += O
+
+			Z.overlays += /obj/Bloods/Zombie/
 			Z.loc = src.loc
 			range(8,src) << "<font color = teal>[src] begins to twitch, after a moment, they rise up from the dead and begin to walk!<br>"
 			Z.Owner << "<font color = teal>A Zombie has risen at [Z.x],[Z.y],[Z.z]<br>"
-			del(src)
-mob/proc/TurnVamp()
-	if(src.CanKill)
-		return
-	if(src.InfectedBy)
-		spawn(300)
-			view() << "[src] starts to look sick."
-			src.overlays += 'RedEye.dmi'
-
-	if(src.InfectedBy)
-		spawn(300)
-			view() << "[src] turns into a vampire!"
-			if(ismob(src.Owner))
-				var/mob/S = src.Owner
-				S.Selected.Remove(src)
-				S.client.images -= src.Star
-				S.UnitList -= src
-				if(S.HasKing == 1)
-					if(src.HasKing == 1)
-						src.HasKing = 0
-						S.HasKing = 0
-				if(S.HasQueen == 1)
-					if(src.HasQueen == 1)
-						src.HasQueen = 0
-						S.HasQueen = 0
-			src.Owner << "[src] has turned into a vampire! [x],[y],[z]"
-			var/mob/E = src.InfectedBy
-			if(ismob(E.Owner))
-				src.Owner = E.Owner
-				if(ismob(E.Owner))
-					var/mob/M = E.Owner
-					M.UnitList += src
-			src.name = "Vampire"
-			if(src.Spider == 1)
-				src.Spider = 0
-				src.Vampire = 1
-			if(src.Race == "Orc")
-				src.Race = null
-				src.Vampire = 1
-			if(src.Goblin == 1)
-				src.Goblin = 0
-				src.Vampire = 1
-			if(src.Kobold == 1)
-				src.Kobold = 0
-				src.Vampire = 1
-			if(src.Dwarf == 1)
-				src.Dwarf = 0
-				src.Vampire = 1
-				src.overlays -= 'Beards.dmi'
-				src.overlays -= 'BlackBeard.dmi'
-				src.overlays -= 'BrownBeard.dmi'
-			if(src.Human == 1)
-				src.Human = 0
-				src.Vampire = 1
-			if(src.Wolf == 1)
-				src.Wolf = 0
-				src.Vampire = 1
-			if(src.Deer == 1)
-				src.Deer = 0
-				src.Vampire = 1
-			if(src.Bug == 1)
-				src.Bug = 0
-				src.Vampire = 1
-			if(src.LizardMan == 1)
-				src.LizardMan = 0
-				src.Vampire = 1
-			src.AM = 1
-
+			del (src)
 obj/proc/TomatoDecay()
 	spawn(19000)
 	if(src.suffix == null)
@@ -1343,9 +937,6 @@ obj/proc/TomatoDecay()
 		del(src)
 	else
 		src.TomatoDecay()
-obj/proc/DeleteLimbs()
-	spawn(1000)
-	del(src)
 obj/proc/ItemDecay()
 	spawn(19000)
 	if(src.suffix == null)
@@ -1353,36 +944,46 @@ obj/proc/ItemDecay()
 	else
 		src.ItemDecay()
 mob/proc/Infection(var/mob/InfectorOwner)
-	src.Infects = 1
-	spawn(1250)
-		if(src)
-			src.Owner << "<font color = teal>[src] begins to look pale.<br>"
-			var/Heal = prob(33)
-			spawn(1250)
+	if(src.Race != "Gargoyle")
+		if(src.ImmuneToDevourer == 0)
+			src.Infects = 1
+			spawn(500)
 				if(src)
-					if(Heal)
-						src.Owner << "<font color = teal>[src] seems to have recovered from whatever horrid plague had stricken them.<br>"
-						src.Infects = 0
-						return
-					else
-						src.Owner << "<font color = teal>[src] begins to gurgle and splutter blood everywhere, they become a Zombie!<br>"
-						var/mob/Monsters/Zombie/Z = new
-						Z.icon = src.icon
-						Z.icon_state = src.icon_state
-						Z.Zombie()
-						Z.loc = src.loc
-						Z.Owner = InfectorOwner
-						Z.name = "([Z.Owner]) Zombie"
-						InfectorOwner.UnitList += Z
-						Z.LimbLoss()
-						var/obj/Bloods/Zombie/O = new
-						Z.overlays += O
-						Z.Owner << "<font color = teal>A new infection was created at [src.x],[src.y],[src.z]<br>"
-						for(var/obj/Items/I in src)
-							I.loc = src.loc
-							I.suffix = null
-						del(src)
-						return
+					src.Owner << "<font color = teal>[src] begins to look pale.<br>"
+					var/Heal = prob(25 + src.Level)
+					spawn(1000)
+						if(src)
+							if(Heal && src.ImmuneToDevourer == 0)
+								src.Owner << "<font color = teal>[src] seems to have recovered from whatever horrid plague had stricken them.<br>"
+								src.Infects = 0
+								return
+							if(src.ImmuneToDevourer == 1)
+								src.Owner << "<font color = teal>[src] seems to have recovered from whatever horrid plague had stricken them due tot heir newfound immunity.<br>"
+								src.Infects = 0
+								return
+							else
+								src.Owner << "<font color = teal>[src] begins to gurgle and splutter blood everywhere, they become a Zombie!<br>"
+								var/mob/Monsters/Zombie/Z = new
+								Z.icon = src.icon
+								Z.icon_state = src.icon_state
+								Z.Zombie()
+								if(src.loc != locate(0,0,0))
+									Z.loc = src.loc
+								else
+									Z.loc = InfectorOwner.loc
+								Z.Owner = InfectorOwner
+								Z.Undead = 1
+								Z.name = "([Z.Owner]) Zombie"
+								InfectorOwner.UnitList += Z
+								Z.LimbLoss()
+								var/obj/Bloods/Zombie/O = new
+								Z.overlays += O
+								Z.Owner << "<font color = teal>A new infection was created at [src.x],[src.y],[src.z]<br>"
+								for(var/obj/Items/I in src)
+									I.loc = src.loc
+									I.suffix = null
+								del(src)
+								return
 mob/proc/Zombie()
 	if(src)
 		if(src.Owner)
@@ -1440,596 +1041,130 @@ mob/proc/BodyDecay()
 	else
 		src.BodyDecay()
 mob/proc/FishDecay()
-	spawn(2000)
+	spawn(500)
 		if(src.suffix == null)
 			del(src)
 
-obj/proc/BoneWeaponCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.WeaponDamageMin = rand(1,2)
-		src.WeaponDamageMax = rand(2,4)
-
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.WeaponDamageMin = rand(1,3)
-		src.WeaponDamageMax = rand(3,4)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-
-	if(src.CraftRank == "Quality")
-		src.WeaponDamageMin = rand(2,4)
-		src.WeaponDamageMax = rand(4,5)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-
-	if(src.CraftRank == "Impressive Quality")
-		src.WeaponDamageMin = rand(6,9)
-		src.WeaponDamageMax = rand(9,16)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, its design is quite impressive it is made of [src.M]"
-
-	if(src.CraftRank == "Grand Quality")
-		src.WeaponDamageMin = rand(8,11)
-		src.WeaponDamageMax = rand(11,17)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, it has the mark of a grand crafter it is made of [src.M]"
-
-	if(src.CraftRank == "Masterful Quality")
-		src.WeaponDamageMin = rand(10,19)
-		src.WeaponDamageMax = rand(19,22)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, its quality is un-matched it is made of [src.M]"
-
-	if(src.CraftRank == "Epic Quality")
-		src.WeaponDamageMin = rand(22,26)
-		src.WeaponDamageMax = rand(26,30)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, this weapon is godly it is made of [src.M]"
-
-	if(src.CraftRank == "Legendary Quality")
-		src.WeaponDamageMin = rand(30,34)
-		src.WeaponDamageMax = rand(34,38)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage,this weapon is godly, its craftmanship is legendary, it is made of [src.M]"
-
-
-obj/proc/WoodDoorCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.HP = rand(300,370)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.HP = rand(380,400)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.HP = rand(400,420)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.HP = rand(500,550)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.HP = rand(600,650)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.HP = rand(700,750)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.HP = rand(800,850)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.HP = rand(900,1000)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-obj/proc/TrainCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.HP = 99999999999999999999
-		src.Content3 = 0.6
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 0.8
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 1
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 1.2
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 1.4
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 1.6
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 1.8
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.HP = 999999999999999999999
-		src.Content3 = 2
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-
-obj/proc/MetalDoorCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.HP = rand(400,500)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.HP = rand(600,650)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.HP = rand(700,750)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.HP = rand(800,950)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.HP = rand(1000,1050)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.HP = rand(1100,1150)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.HP = rand(1200,1250)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.HP = rand(1300,1350)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could take [src.HP] Damage, it is made of [src.M]"
-obj/proc/MetalWeaponCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.WeaponDamageMin = rand(1,2)
-		src.WeaponDamageMax = rand(2,4)
-
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.WeaponDamageMin = rand(1,3)
-		src.WeaponDamageMax = rand(3,5)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-
-	if(src.CraftRank == "Quality")
-		src.WeaponDamageMin = rand(2,4)
-		src.WeaponDamageMax = rand(4,6)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-
-	if(src.CraftRank == "Impressive Quality")
-		src.WeaponDamageMin = rand(6,10)
-		src.WeaponDamageMax = rand(10,17)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, its design is quite impressive it is made of [src.M]"
-
-	if(src.CraftRank == "Grand Quality")
-		src.WeaponDamageMin = rand(8,12)
-		src.WeaponDamageMax = rand(12,18)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, it has the mark of a grand crafter it is made of [src.M]"
-
-	if(src.CraftRank == "Masterful Quality")
-		src.WeaponDamageMin = rand(10,20)
-		src.WeaponDamageMax = rand(20,25)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, its quality is un-matched it is made of [src.M]"
-
-	if(src.CraftRank == "Epic Quality")
-		src.WeaponDamageMin = rand(20,25)
-		src.WeaponDamageMax = rand(26,30)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, this weapon is godly it is made of [src.M]"
-
-	if(src.CraftRank == "Legendary Quality")
-		src.WeaponDamageMin = rand(30,35)
-		src.WeaponDamageMax = rand(36,40)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage,this weapon is godly, its craftmanship is legendary, it is made of [src.M]"
-
-obj/proc/GoldWeaponCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.WeaponDamageMin = rand(2,3)
-		src.WeaponDamageMax = rand(3,4)
-
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.WeaponDamageMin = rand(2,3)
-		src.WeaponDamageMax = rand(3,5)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-
-	if(src.CraftRank == "Quality")
-		src.WeaponDamageMin = rand(3,4)
-		src.WeaponDamageMax = rand(4,6)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage it is made of [src.M]"
-
-	if(src.CraftRank == "Impressive Quality")
-		src.WeaponDamageMin = rand(7,10)
-		src.WeaponDamageMax = rand(10,17)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, its design is quite impressive it is made of [src.M]"
-
-	if(src.CraftRank == "Grand Quality")
-		src.WeaponDamageMin = rand(8,12)
-		src.WeaponDamageMax = rand(12,18)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, it has the mark of a grand crafter it is made of [src.M]"
-
-	if(src.CraftRank == "Masterful Quality")
-		src.WeaponDamageMin = rand(11,16)
-		src.WeaponDamageMax = rand(16,20)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, its quality is un-matched it is made of [src.M]"
-
-	if(src.CraftRank == "Epic Quality")
-		src.WeaponDamageMin = rand(17,21)
-		src.WeaponDamageMax = rand(22,28)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage, this weapon is godly it is made of [src.M]"
-
-	if(src.CraftRank == "Legendary Quality")
-		src.WeaponDamageMin = rand(28,33)
-		src.WeaponDamageMax = rand(33,44)
-		src.name = "[src] - [src.CraftRank]"
-		desc = "this is a [src] it looks like it could do [src.WeaponDamageMin]/[src.WeaponDamageMax] Damage,this weapon is godly, its craftmanship is legendary, it is made of [src.M]"
-
+obj/proc/DoorCraft()
+	switch(CraftRank)
+		if("Poor Quality") HP = rand(400,500)
+		if("Average Quality") HP = rand(600,650)
+		if("Quality") HP = rand(700,750)
+		if("Impressive Quality") HP = rand(800,950)
+		if("Grand Quality") HP = rand(1000,1050)
+		if("Masterful Quality") HP = rand(1100,1150)
+		if("Epic Quality") HP = rand(1200,1250)
+		if("Legendary Quality") HP = rand(1300,1350)
+	name = "[src] - [src.CraftRank]"
+	desc = "this is a [src] it looks like it could take [src.HP] Damage."
 obj/proc/FurnitureCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(40,50)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(40,50)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(40,60)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(60,70)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(70,80)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(80,90)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(100,100)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.name = "[src] - [src.CraftRank]"
-		src.CR = rand(100,100)
-		desc = "this is [src] it has a impressiveness rating of [src.CR] and is made of [src.M]"
+	switch(CraftRank)
+		if("Poor Quality") CR = rand(1,5)
+		if("Average Quality") CR = rand(5,10)
+		if("Quality") CR = rand(20,30)
+		if("Impressive Quality") CR = rand(30,40)
+		if("Grand Quality") CR = rand(40,50)
+		if("Masterful Quality") CR = rand(50,60)
+		if("Epic Quality") CR = rand(70,80)
+		if("Legendary Quality") CR = rand(127,138)
+	name = "[src] - [CraftRank]"
+	desc = "this is [src] it has a impressiveness rating of [src.CR]."
+obj/proc/TrainCraft()
+	switch(CraftRank)
+		if("Poor Quality") Content3 = 1.5
+		if("Average Quality") Content3 = 1.6
+		if("Quality") Content3 = 1.7
+		if("Impressive Quality") Content3 = 1.8
+		if("Grand Quality") Content3 = 1.85
+		if("Masterful Quality") Content3 = 1.9
+		if("Epic Quality") Content3 = 1.95
+		if("Legendary Quality") Content3 = 2
+	name = "[src] - [CraftRank]"
+	desc = "this is a [src] it grants [Content3] experience per hit."
+obj/proc/MetalWeaponCraft()
+	switch(CraftRank)
+		if("Poor Quality")
+			WeaponDamageMin = 15
+			WeaponDamageMax = 20
+		if("Average Quality")
+			WeaponDamageMin = 18
+			WeaponDamageMax = 22
+		if("Quality")
+			WeaponDamageMin = 20
+			WeaponDamageMax = 24
+		if("Impressive Quality")
+			WeaponDamageMin = 21
+			WeaponDamageMax = 25
+		if("Grand Quality")
+			WeaponDamageMin = 22
+			WeaponDamageMax = 25
+		if("Masterful Quality")
+			WeaponDamageMin = 22
+			WeaponDamageMax = 26
+		if("Epic Quality")
+			WeaponDamageMin = 22
+			WeaponDamageMax = 28
+		if("Legendary Quality")
+			WeaponDamageMin = 25
+			WeaponDamageMax = 30
+		if("Holy Quality")
+			WeaponDamageMin = 26
+			WeaponDamageMax = 32
+		if("Unholy Quality")
+			WeaponDamageMin = 20
+			WeaponDamageMax = 40
+	name = "[name] - [CraftRank]"
+	if(Silver)
+		WeaponDamageMin-=5
+		WeaponDamageMax-=5
+obj/proc/BoneWeaponCraft()
+	MetalWeaponCraft()
+	WeaponDamageMin-=5
+	WeaponDamageMax+=5
+obj/proc/AdamantiumWeaponCraft()
+	CraftRank="Legendary Quality"
+	WeaponDamageMin = 30
+	WeaponDamageMax = 40
+	name = "[name] - [src.CraftRank]"
+obj/proc/AdamantiumArmourCraft()
+	CraftRank="Legendary Quality"
+	Defence = 18.5
+	name = "[src] - [CraftRank]"
+
+//Base defence of 20, plus 10 for holy shield, then rare cape + 5 copies of armor.
+//Thus, 40-ish base defence, aiming for 50 room from 250
 obj/proc/MetalArmourCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(1,2)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(2,3)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(3,4)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(4,5)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(5,10)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(10,15)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(13,17)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(17,20)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
+	switch(CraftRank)
+		if("Poor Quality") Defence = 10
+		if("Average Quality") Defence = 11
+		if("Quality") Defence = 12
+		if("Impressive Quality") Defence = 13
+		if("Grand Quality") Defence = 14
+		if("Masterful Quality") Defence = 15
+		if("Epic Quality") Defence = 16
+		if("Legendary Quality") Defence = 17
+		if("Holy Quality") Defence = 17
+		if("Unholy Quality") Defence = 18
+	name = "[src] - [CraftRank]"
 obj/proc/BoneArmourCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(1,2)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(2,3)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(3,4)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(4,4)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(5,9)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(9,13)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(13,15)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(15,17)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-obj/proc/WoodArmourCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(1,2)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(2,3)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(3,4)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(4,4)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(5,9)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(9,14)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(13,15)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(15,17)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-obj/proc/LeatherArmourCraft()
-	if(src.CraftRank == "Poor Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(1,1)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Average Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(1,3)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(2,3)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Impressive Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(3,4)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Grand Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(5,9)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Masterful Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(9,11)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Epic Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(11,15)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-	if(src.CraftRank == "Legendary Quality")
-		src.name = "[src] - [src.CraftRank]"
-
-		src.Defence = rand(15,17)
-		desc = "this is [src] it has a defence rating of [src.Defence] and is made of [src.M]"
-mob/proc/Leave()
-	if(src.Leave == 1)
-		src.Owner << "[src] : I have to leave now, good bye."
-		del(src)
-	if(src.Leave == 0)
-		src.Leave = 1
-	spawn(24000) Leave()
-mob/proc/ReturnHome2()
-	if(src.Sleeping == 0)
-		src.ReturningHome = 1
-	spawn(1000) ReturnHome2()
-
-mob/proc/ReturnHome()
-	if(src.Sleeping == 0)
-		src.ReturningHome = 1
-	spawn(1000) ReturnHome()
-
-mob/proc/Escort()
-
-	if(src.Alive == 0)
-		return
-	var/Speed = 20
-	if(src.InHole == 0)
-		if(src.ReturningHome)
-			if(src.loc == src.HomeLoc)
-				src.ReturningHome = 0
-				src.destination = null
-		if(src.ReturningHome == 0)
-			for(var/mob/Monsters/M in oview(6,src))
-				if(M.destination == src)
-					if(src.destination == null)
-						src.destination = M
-				if(src.Owner == M.Owner)
-					for(var/mob/Monsters/S in oview(6,M))
-						if(S.destination == M)
-							if(src.AttackModeOn)
-								if(src.destination == null)
-									if(src.Sleeping == 0)
-										if(S.Body == 0)
-											if(S.Wagon == 0)
-												if(S.Drill == 0)
-													if(S.InHole == 0)
-														src.destination = S
-														Speed = 10
-
-		if(src.ReturningHome)
-			if(src.InHole == 0)
-				if(src.Sleeping == 0)
-					src.destination = src.HomeLoc
-	spawn(Speed) Escort()
-mob/proc/FOS()
-	if(src.Alive == 0)
-		return
-	var/Speed = 20
-	if(src.InHole == 0)
-		if(src.loc == src.HomeLoc)
-			src.ReturningHome = 0
-			src.destination = null
-		if(src.ReturningHome == 0)
-			for(var/mob/Monsters/M in view(4,src))
-				if(src.destination == null)
-					if(src.Sleeping == 0)
-						if(src.Owner == M.Owner)
-							..()
-						else
-							if(M.Body == 0)
-								if(M.Wagon == 0)
-									if(M.Drill == 0)
-										src.destination = M
-										Speed = 10
-
-		if(src.ReturningHome)
-			if(src.InHole == 0)
-				if(src.Sleeping == 0)
-					src.destination = src.HomeLoc
-	spawn(Speed) FOS()
-mob/proc/NPCAttack()
-	if(src.Alive == 0)
-		return
-	var/Speed = 20
-	if(src.loc == src.HomeLoc)
-		src.ReturningHome = 0
-		src.destination = null
-	if(src.ReturningHome == 0)
-		for(var/mob/Monsters/M in view(3,src))
-			if(src.InHole == 0)
-				if(src.Sleeping == 0)
-					if(src.Kobold)
-						if(M.StoleFromKobolds)
-							Speed = 10
-							src.destination = M
-					if(src.Owner == "{NPC Humans}")
-						if(M.StoleFromHumans)
-							Speed = 10
-							src.destination = M
-					if(src.Dwarf)
-						if(M.StoleFromDwarfs)
-							Speed = 10
-							src.destination = M
-					if(src.Goblin)
-						if(M.StoleFromGoblins)
-							Speed = 10
-							src.destination = M
-					if(M.destination == src)
-						src.destination = M
-						Speed = 10
-	if(src.ReturningHome)
-		if(src.InHole == 0)
-			if(src.Sleeping == 0)
-				src.destination = src.HomeLoc
-	spawn(Speed) NPCAttack()
-
-
-
-
-
-
+	switch(CraftRank)
+		if("Poor Quality") Defence = 5
+		if("Average Quality") Defence = 6
+		if("Quality") Defence = 7
+		if("Impressive Quality") Defence = 8
+		if("Grand Quality") Defence = 9
+		if("Masterful Quality") Defence = 10
+		if("Epic Quality") Defence = 11
+		if("Legendary Quality") Defence = 12
+		if("Holy Quality") Defence = 13
+		if("Unholy Quality") Defence = 14
+	name = "[src] - [CraftRank]"
 mob
 	var
 		list
-
-			Selected
-
-
-
-atom
-	var
-		HP
-		MAXHP
-		WeaponDamageMin = 0
-		WeaponDamageMax = 0
-atom
-	var
-		grass
-		weight = 0
-		weightmax
+			tmp
+				Selected=new()
+				IgnoreList=new()
+			Rares = new()
+			UnitList = new()
+			AllyList = new()

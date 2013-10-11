@@ -1,0 +1,77 @@
+// DM Environment file for Cave Crawlers.dme.
+// All manual changes should be made outside the BEGIN_ and END_ blocks.
+// New source code should be placed in .dm files: choose File/New --> Code File.
+
+// BEGIN_INTERNALS
+// END_INTERNALS
+// BEGIN_FILE_DIR
+#define FILE_DIR .
+#define FILE_DIR "Code"
+#define FILE_DIR "Code/Building"
+#define FILE_DIR "Code/Creatures"
+#define FILE_DIR "Code/Creatures/Icons"
+#define FILE_DIR "Code/Items"
+#define FILE_DIR "Code/Items/Icons"
+#define FILE_DIR "Icons"
+#define FILE_DIR "Sounds"
+// END_FILE_DIR
+
+// BEGIN_PREFERENCES
+// END_PREFERENCES
+
+// BEGIN_INCLUDE
+#include "Player.dm"
+#include "skin.dmf"
+#include "BackGrounds.dms"
+#include "Code\1 - Item Making.dm"
+#include "Code\1 - QuickProcs.dm"
+#include "Code\1 - Stat Proc.dm"
+#include "Code\Admin.dm"
+#include "Code\AntiSpam.dm"
+#include "Code\Click.dm"
+#include "Code\DamagedParts.dm"
+#include "Code\History.dm"
+#include "Code\Login.dm"
+#include "Code\Mobs.dm"
+#include "Code\Ownership.dm"
+#include "Code\plugin.dm"
+#include "Code\Random Events.dm"
+#include "Code\Restart.dm"
+#include "Code\Saves.dm"
+#include "Code\Selection.dm"
+#include "Code\Turfs.dm"
+#include "Code\Vars.dm"
+#include "Code\Verbs.dm"
+#include "Code\World.dm"
+#include "Code\Building\Building.dm"
+#include "Code\Building\HUD Building.dm"
+#include "Code\Building\Stairs.dm"
+#include "Code\Building\TurfTypes.dm"
+#include "Code\Creatures\Breeding.dm"
+#include "Code\Creatures\Bump.dm"
+#include "Code\Creatures\Combat - Bows.dm"
+#include "Code\Creatures\Combats.dm"
+#include "Code\Creatures\Critters.dm"
+#include "Code\Creatures\Death.dm"
+#include "Code\Creatures\Health.dm"
+#include "Code\Creatures\Interact.dm"
+#include "Code\Creatures\Leveling.dm"
+#include "Code\Creatures\Mob Procs.dm"
+#include "Code\Creatures\Monster AI.dm"
+#include "Code\Creatures\OverlayBuilds.dm"
+#include "Code\Creatures\Race.dm"
+#include "Code\Creatures\Race\Dragons.dm"
+#include "Code\Creatures\Race\Spiders.dm"
+#include "Code\Creatures\Race\Vampires.dm"
+#include "Code\Creatures\Race\Werewolves.dm"
+#include "Code\Items\CraftingStations.dm"
+#include "Code\Items\Crowning.dm"
+#include "Code\Items\Equipment Lists.dm"
+#include "Code\Items\Food.dm"
+#include "Code\Items\Item Procs.dm"
+#include "Maps\1-Ground.dmm"
+#include "Maps\2-Underground.dmm"
+#include "Maps\3-Sky.dmm"
+#include "Maps\4-Hell.dmm"
+// END_INCLUDE
+
